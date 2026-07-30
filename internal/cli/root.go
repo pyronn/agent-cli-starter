@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	appName    = "agentctl"
-	skipConfig = "skip-config"
+	appName        = "agentctl"
+	appDescription = "A production-minded starter for agent-facing CLI tools"
+	skipConfig     = "skip-config"
 )
 
 type Options struct {
@@ -86,7 +87,7 @@ func newRootCommand(options Options) (*cobra.Command, *state) {
 
 	root := &cobra.Command{
 		Use:           appName,
-		Short:         "A production-minded starter for agent-facing CLI tools",
+		Short:         appDescription,
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		Args:          noArgs,

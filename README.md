@@ -30,6 +30,61 @@ Windows 也可以运行构建脚本：
 .\dist\agentctl.exe version
 ```
 
+## 初始化为自己的 CLI
+
+从 GitHub 模板创建仓库或复制本项目后，先运行初始化工具。它会统一修改：
+
+- CLI 命令名和 `cmd/<name>` 目录
+- Go module 路径及所有内部 import
+- 环境变量前缀
+- 跨平台配置目录名
+- README 标题和项目描述
+- PowerShell 构建产物名
+- GitHub Actions 六平台产物名
+
+Windows PowerShell：
+
+```powershell
+.\scripts\init.ps1 `
+  --name acmectl `
+  --module github.com/acme/acmectl `
+  --description "Manage Acme resources" `
+  --yes
+```
+
+Linux 或 macOS：
+
+```shell
+bash scripts/init.sh \
+  --name acmectl \
+  --module github.com/acme/acmectl \
+  --description "Manage Acme resources" \
+  --yes
+```
+
+也可以直接运行跨平台的 Go 初始化工具：
+
+```shell
+go run ./tools/init --name acmectl --module github.com/acme/acmectl --yes
+```
+
+如果不提供 `--name` 或 `--module`，工具会进入交互模式。环境变量前缀默认根据命令名生成，例如 `acme-agent` 会得到 `ACME_AGENT`；也可以用 `--env-prefix` 显式指定。
+
+初始化工具默认要求 Git 工作区干净，修改完成后会执行 `go mod tidy` 和 `go test ./...`。常用的安全选项：
+
+```shell
+# 只预览文件和目录变更
+go run ./tools/init --name acmectl --module github.com/acme/acmectl --dry-run
+
+# 跳过初始化后的 Go 验证
+go run ./tools/init --name acmectl --module github.com/acme/acmectl --no-verify --yes
+
+# 明确允许修改存在未提交内容的工作区
+go run ./tools/init --name acmectl --module github.com/acme/acmectl --force --yes
+```
+
+建议在开始编写业务代码前运行一次初始化，并在初始化成功后立即提交结果。
+
 ## 安装 CLI
 
 ### 从源码安装
