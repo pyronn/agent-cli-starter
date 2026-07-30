@@ -30,6 +30,87 @@ Windows 也可以运行构建脚本：
 .\dist\agentctl.exe version
 ```
 
+## 安装 CLI
+
+### 从源码安装
+
+克隆项目后，在仓库根目录执行：
+
+```shell
+go install ./cmd/agentctl
+agentctl version
+agentctl doctor
+```
+
+`go install` 会把可执行文件放入 `go env GOBIN`；如果 `GOBIN` 为空，则放入 `$(go env GOPATH)/bin`。请确保该目录已经加入系统的 `PATH`。
+
+模板替换为自己的模块路径并发布到 GitHub 后，也可以直接安装指定版本：
+
+```shell
+go install github.com/your-org/your-repo/cmd/agentctl@latest
+```
+
+建议生产环境使用明确版本，避免安装结果随 `latest` 变化：
+
+```shell
+go install github.com/your-org/your-repo/cmd/agentctl@v1.2.3
+```
+
+### 下载 GitHub Actions 构建产物
+
+CI 会在测试通过后生成以下 6 个产物：
+
+| 系统 | x86-64 / amd64 | ARM64 |
+|---|---|---|
+| Windows | `agentctl-windows-amd64.exe` | `agentctl-windows-arm64.exe` |
+| Linux | `agentctl-linux-amd64` | `agentctl-linux-arm64` |
+| macOS | `agentctl-darwin-amd64` | `agentctl-darwin-arm64` |
+
+在 GitHub 仓库中打开 `Actions` → 选择一次成功的 `ci` 运行 → 在 `Artifacts` 区域下载对应系统和 CPU 架构的压缩包。可以用以下命令确认本机架构：
+
+```shell
+go env GOOS GOARCH
+```
+
+Windows PowerShell 安装示例：
+
+```powershell
+$UserBin = Join-Path $HOME "bin"
+New-Item -ItemType Directory -Force $UserBin
+Move-Item .\agentctl-windows-amd64.exe (Join-Path $UserBin "agentctl.exe")
+```
+
+把 `%USERPROFILE%\bin` 加入用户 `PATH`，重新打开终端后验证：
+
+```powershell
+agentctl version
+agentctl doctor --json
+```
+
+Linux amd64 安装示例：
+
+```shell
+mkdir -p ~/.local/bin
+install -m 0755 agentctl-linux-amd64 ~/.local/bin/agentctl
+agentctl version
+```
+
+macOS Apple Silicon 安装示例：
+
+```shell
+mkdir -p ~/.local/bin
+install -m 0755 agentctl-darwin-arm64 ~/.local/bin/agentctl
+agentctl version
+```
+
+Linux 和 macOS 需要确保 `~/.local/bin` 位于 `PATH` 中：
+
+```shell
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+当前 CI 产物没有代码签名。macOS 或企业 Windows 环境可能会提示来源未知；正式发布时应配置平台签名，不建议要求用户长期关闭系统安全检查。
+
 ## 配置命令
 
 ```shell

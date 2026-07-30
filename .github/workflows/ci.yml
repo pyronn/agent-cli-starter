@@ -9,7 +9,9 @@ permissions:
 
 jobs:
   test:
+    name: test (${{ matrix.os }})
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -22,3 +24,58 @@ jobs:
       - run: go test ./...
       - run: go vet ./...
       - run: go build ./cmd/agentctl
+
+  build:
+    name: build (${{ matrix.goos }}/${{ matrix.goarch }})
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            filename: agentctl-linux-amd64
+          - goos: linux
+            goarch: arm64
+            filename: agentctl-linux-arm64
+          - goos: darwin
+            goarch: amd64
+            filename: agentctl-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            filename: agentctl-darwin-arm64
+          - goos: windows
+            goarch: amd64
+            filename: agentctl-windows-amd64.exe
+          - goos: windows
+            goarch: arm64
+            filename: agentctl-windows-arm64.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build binary
+        shell: bash
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+          OUTPUT_FILE: ${{ matrix.filename }}
+        run: |
+          mkdir -p dist
+          build_date="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          go build \
+            -trimpath \
+            -ldflags="-s -w -X main.version=${GITHUB_REF_NAME} -X main.commit=${GITHUB_SHA::12} -X main.date=${build_date}" \
+            -o "dist/${OUTPUT_FILE}" \
+            ./cmd/agentctl
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.filename }}
+          path: dist/${{ matrix.filename }}
+          if-no-files-found: error
+          retention-days: 14
