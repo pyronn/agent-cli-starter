@@ -1,0 +1,4 @@
+interface:
+  display_name: "agentctl CLI"
+  short_description: "Use and extend the agentctl command-line tool"
+  default_prompt: "Use $agentctl to inspect the CLI and run the appropriate command."

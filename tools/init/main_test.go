@@ -55,11 +55,17 @@ func TestBuildAndApplyPlan(t *testing.T) {
 	assertContains(t, filepath.Join(root, "internal", "cli", "root.go"), `appName = "acme-cli"`)
 	assertContains(t, filepath.Join(root, "internal", "cli", "root.go"), `appDescription = "Manage Acme \"$5\" resources"`)
 	assertContains(t, filepath.Join(root, "README.md"), "# acme-cli\n\nManage Acme \"$5\" resources")
+	assertContains(t, filepath.Join(root, "skills", "acme-cli", "SKILL.md"), "name: acme-cli")
+	assertContains(t, filepath.Join(root, "skills", "acme-cli", "SKILL.md"), "ACME_CLI_TOKEN")
+	assertContains(t, filepath.Join(root, "skills", "acme-cli", "agents", "openai.yaml"), "$acme-cli")
 	if _, err := os.Stat(filepath.Join(root, "cmd", "acme-cli", "main.go")); err != nil {
 		t.Fatalf("renamed command entry does not exist: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root, "cmd", "agentctl")); !os.IsNotExist(err) {
 		t.Fatalf("old command directory still exists or stat failed: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "skills", "agentctl")); !os.IsNotExist(err) {
+		t.Fatalf("old skill directory still exists or stat failed: %v", err)
 	}
 }
 
@@ -131,6 +137,17 @@ const (
 		filepath.Join("internal", "config", "config.go"): `package config
 
 const endpoint = "AGENTCTL_ENDPOINT"
+`,
+		filepath.Join("skills", "agentctl", "SKILL.md"): `---
+name: agentctl
+description: Use agentctl.
+---
+
+Never print AGENTCTL_TOKEN.
+`,
+		filepath.Join("skills", "agentctl", "agents", "openai.yaml"): `interface:
+  display_name: "agentctl CLI"
+  default_prompt: "Use $agentctl to inspect agentctl."
 `,
 		"README.md": `# Agent CLI Starter
 

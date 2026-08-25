@@ -53,6 +53,8 @@ type changePlan struct {
 	edits      []fileEdit
 	oldCommand string
 	newCommand string
+	oldSkill   string
+	newSkill   string
 }
 
 func main() {
@@ -151,6 +153,12 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		)
 	} else {
 		fmt.Fprintf(stdout, "Updated %d files.\n", len(plan.edits))
+	}
+	if plan.oldSkill != plan.newSkill {
+		fmt.Fprintf(stdout, "Renamed %s to %s.\n",
+			relativePath(root, plan.oldSkill),
+			relativePath(root, plan.newSkill),
+		)
 	}
 	if !options.noVerify {
 		if err := execute(stdout, stderr, root, "go", "mod", "tidy"); err != nil {
@@ -298,12 +306,13 @@ func deriveEnvPrefix(name string) string {
 func buildPlan(root string, current projectState, options settings) (changePlan, error) {
 	oldCommand := filepath.Join(root, "cmd", current.name)
 	newCommand := filepath.Join(root, "cmd", options.name)
-	if oldCommand != newCommand {
-		if _, err := os.Stat(newCommand); err == nil {
-			return changePlan{}, fmt.Errorf("target command directory already exists: %s", newCommand)
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return changePlan{}, fmt.Errorf("inspect target command directory: %w", err)
-		}
+	oldSkill := filepath.Join(root, "skills", current.name)
+	newSkill := filepath.Join(root, "skills", options.name)
+	if err := validateRenameTarget(oldCommand, newCommand, "command"); err != nil {
+		return changePlan{}, err
+	}
+	if err := validateRenameTarget(oldSkill, newSkill, "skill"); err != nil {
+		return changePlan{}, err
 	}
 
 	var edits []fileEdit
@@ -345,7 +354,25 @@ func buildPlan(root string, current projectState, options settings) (changePlan,
 		return changePlan{}, err
 	}
 	sort.Slice(edits, func(i, j int) bool { return edits[i].path < edits[j].path })
-	return changePlan{edits: edits, oldCommand: oldCommand, newCommand: newCommand}, nil
+	return changePlan{
+		edits: edits, oldCommand: oldCommand, newCommand: newCommand,
+		oldSkill: oldSkill, newSkill: newSkill,
+	}, nil
+}
+
+func validateRenameTarget(source, target, label string) error {
+	if source == target {
+		return nil
+	}
+	if _, err := os.Stat(source); err != nil {
+		return fmt.Errorf("expected %s directory %s: %w", label, source, err)
+	}
+	if _, err := os.Stat(target); err == nil {
+		return fmt.Errorf("target %s directory already exists: %s", label, target)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("inspect target %s directory: %w", label, err)
+	}
+	return nil
 }
 
 func replaceIdentity(data []byte, current projectState, options settings) []byte {
@@ -437,6 +464,11 @@ func applyPlan(plan changePlan) error {
 			return fmt.Errorf("rename command directory: %w", err)
 		}
 	}
+	if plan.oldSkill != plan.newSkill {
+		if err := os.Rename(plan.oldSkill, plan.newSkill); err != nil {
+			return fmt.Errorf("rename skill directory: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -500,6 +532,9 @@ func printPlan(output io.Writer, root string, plan changePlan) {
 	}
 	if plan.oldCommand != plan.newCommand {
 		fmt.Fprintf(output, "  rename %s -> %s\n", relativePath(root, plan.oldCommand), relativePath(root, plan.newCommand))
+	}
+	if plan.oldSkill != plan.newSkill {
+		fmt.Fprintf(output, "  rename %s -> %s\n", relativePath(root, plan.oldSkill), relativePath(root, plan.newSkill))
 	}
 }
 

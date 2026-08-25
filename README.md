@@ -85,6 +85,26 @@ go run ./tools/init --name acmectl --module github.com/acme/acmectl --force --ye
 
 建议在开始编写业务代码前运行一次初始化，并在初始化成功后立即提交结果。
 
+## Agent Skill
+
+项目在 [`skills/agentctl`](skills/agentctl) 中提供与当前 CLI 同步维护的 Agent Skill。它采用薄入口加按需 references 的结构，覆盖命令发现、配置优先级、JSON 输出契约和持久化配置操作。
+
+初始化工具会同时把 Skill 目录名、frontmatter、命令示例、环境变量前缀和 UI 元数据替换成新的 CLI 名称。例如初始化为 `acmectl` 后，Skill 位于 `skills/acmectl`。
+
+把整个 Skill 目录复制到 Agent 的技能目录即可使用。Codex 的典型位置是：
+
+```text
+~/.codex/skills/agentctl/
+```
+
+开发新的 CLI 命令时应同步更新：
+
+1. `skills/<cli>/references/commands.md` 中的真实命令与参数约束。
+2. 输出或配置契约发生变化时对应的 reference。
+3. `SKILL.md` 的路由与安全约束，但不要把完整命令手册堆进入口文件。
+
+该结构借鉴了 [Lark CLI](https://github.com/larksuite/cli) 的 Agent 友好实践：执行前通过 help 发现真实能力、机器调用优先结构化输出、共享契约集中维护、详细命令按需加载；没有引入本模板尚不具备的 OAuth、scope 或身份模型。
+
 ## 安装 CLI
 
 ### 下载 GitHub Release（推荐）
