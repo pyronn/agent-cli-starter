@@ -87,6 +87,28 @@ go run ./tools/init --name acmectl --module github.com/acme/acmectl --force --ye
 
 ## 安装 CLI
 
+### 下载 GitHub Release（推荐）
+
+普通用户不需要安装 Go。进入仓库的 `Releases` 页面，下载与操作系统和 CPU 架构匹配的压缩包：
+
+| 系统 | x86-64 / amd64 | ARM64 |
+|---|---|---|
+| Windows | `agentctl-vX.Y.Z-windows-amd64.zip` | `agentctl-vX.Y.Z-windows-arm64.zip` |
+| Linux | `agentctl-vX.Y.Z-linux-amd64.tar.gz` | `agentctl-vX.Y.Z-linux-arm64.tar.gz` |
+| macOS | `agentctl-vX.Y.Z-darwin-amd64.tar.gz` | `agentctl-vX.Y.Z-darwin-arm64.tar.gz` |
+
+每个 Release 还会提供 `SHA256SUMS`。Linux 可以在下载目录验证：
+
+```shell
+sha256sum --ignore-missing -c SHA256SUMS
+```
+
+Windows PowerShell 可以把输出与 `SHA256SUMS` 中对应文件的值比较：
+
+```powershell
+Get-FileHash .\agentctl-v1.2.3-windows-amd64.zip -Algorithm SHA256
+```
+
 ### 从源码安装
 
 克隆项目后，在仓库根目录执行：
@@ -164,7 +186,28 @@ Linux 和 macOS 需要确保 `~/.local/bin` 位于 `PATH` 中：
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-当前 CI 产物没有代码签名。macOS 或企业 Windows 环境可能会提示来源未知；正式发布时应配置平台签名，不建议要求用户长期关闭系统安全检查。
+当前 Release 和 CI 产物没有代码签名。macOS 或企业 Windows 环境可能会提示来源未知；正式发布时应配置平台签名，不建议要求用户长期关闭系统安全检查。
+
+## 发布版本
+
+Release 工作流只接受带 `v` 前缀的语义化版本标签，例如 `v1.2.3` 或 `v1.2.3-rc.1`。确认 `main` 分支测试通过后创建并推送标签：
+
+```shell
+git switch main
+git pull --ff-only
+git tag -a v1.2.3 -m "Release v1.2.3"
+git push origin v1.2.3
+```
+
+推送后，[release 工作流](.github/workflows/release.yml) 会自动：
+
+1. 校验 SemVer 标签并运行 `go test`、`go vet`。
+2. 构建 Windows、Linux、macOS 的 amd64/arm64 二进制。
+3. 将 Windows 产物打包为 ZIP，将 Linux/macOS 产物打包为 `tar.gz`。
+4. 汇总产物并生成 `SHA256SUMS`。
+5. 使用标签创建 GitHub Release、生成 release notes 并上传全部附件。
+
+包含连字符的版本（例如 `v1.2.3-rc.1`）会自动标记为 Pre-release。发布任务使用仓库自带的 `GITHUB_TOKEN`，所需权限限定为发布任务的 `contents: write`。
 
 ## 配置命令
 
