@@ -58,6 +58,9 @@ func TestBuildAndApplyPlan(t *testing.T) {
 	assertContains(t, filepath.Join(root, "skills", "acme-cli", "SKILL.md"), "name: acme-cli")
 	assertContains(t, filepath.Join(root, "skills", "acme-cli", "SKILL.md"), "ACME_CLI_TOKEN")
 	assertContains(t, filepath.Join(root, "skills", "acme-cli", "agents", "openai.yaml"), "$acme-cli")
+	assertContains(t, filepath.Join(root, "scripts", "install.sh"), `repository_url="https://github.com/acme/acme-cli"`)
+	assertContains(t, filepath.Join(root, "scripts", "install.sh"), "ACME_CLI_VERSION")
+	assertContains(t, filepath.Join(root, "scripts", "install.ps1"), `$RepositoryUrl = "https://github.com/acme/acme-cli"`)
 	if _, err := os.Stat(filepath.Join(root, "cmd", "acme-cli", "main.go")); err != nil {
 		t.Fatalf("renamed command entry does not exist: %v", err)
 	}
@@ -108,9 +111,9 @@ func TestReplaceIdentityPreservesRequestedModule(t *testing.T) {
 		module:    "github.com/acme/oldctl-compatible",
 		envPrefix: "NEWCTL",
 	}
-	input := []byte("github.com/acme/oldctl/internal/cli OLDCTL_ENDPOINT oldctl")
+	input := []byte("github.com/acme/oldctl/internal/cli raw.githubusercontent.com/acme/oldctl OLDCTL_ENDPOINT oldctl")
 	actual := string(replaceIdentity(input, current, options))
-	expected := "github.com/acme/oldctl-compatible/internal/cli NEWCTL_ENDPOINT newctl"
+	expected := "github.com/acme/oldctl-compatible/internal/cli raw.githubusercontent.com/acme/oldctl-compatible NEWCTL_ENDPOINT newctl"
 	if actual != expected {
 		t.Fatalf("replaceIdentity() = %q, want %q", actual, expected)
 	}
@@ -148,6 +151,12 @@ Never print AGENTCTL_TOKEN.
 		filepath.Join("skills", "agentctl", "agents", "openai.yaml"): `interface:
   display_name: "agentctl CLI"
   default_prompt: "Use $agentctl to inspect agentctl."
+`,
+		filepath.Join("scripts", "install.sh"): `repository_url="https://github.com/example/agent-cli-starter"
+version="${AGENTCTL_VERSION:-latest}"
+`,
+		filepath.Join("scripts", "install.ps1"): `$RepositoryUrl = "https://github.com/example/agent-cli-starter"
+$Version = $env:AGENTCTL_VERSION
 `,
 		"README.md": `# Agent CLI Starter
 

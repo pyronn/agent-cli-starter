@@ -107,7 +107,41 @@ go run ./tools/init --name acmectl --module github.com/acme/acmectl --force --ye
 
 ## 安装 CLI
 
-### 下载 GitHub Release（推荐）
+发布给普通用户的是原生可执行文件，不依赖 Go、Node.js、npm、Python 或其他运行时。npm 不参与本项目的构建、发布或安装流程。
+
+### 命令安装（推荐）
+
+Linux 或 macOS：
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/pyronn/agent-cli-starter/main/scripts/install.sh | sh
+```
+
+Windows PowerShell：
+
+```powershell
+irm https://raw.githubusercontent.com/pyronn/agent-cli-starter/main/scripts/install.ps1 | iex
+```
+
+安装脚本会自动识别操作系统和 CPU 架构，从 GitHub Release 下载对应压缩包，校验 `SHA256SUMS`，然后安装到用户目录：
+
+- Linux/macOS：默认 `~/.local/bin/agentctl`
+- Windows：默认 `%USERPROFILE%\bin\agentctl.exe`，并加入用户 `PATH`
+
+安装指定版本：
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/pyronn/agent-cli-starter/main/scripts/install.sh | sh -s -- v1.2.3
+```
+
+```powershell
+$env:AGENTCTL_VERSION = "v1.2.3"
+irm https://raw.githubusercontent.com/pyronn/agent-cli-starter/main/scripts/install.ps1 | iex
+```
+
+直接执行网络脚本前可以先下载并检查其内容；在受控或企业环境中推荐这样做。
+
+### 手动下载 GitHub Release
 
 普通用户不需要安装 Go。进入仓库的 `Releases` 页面，下载与操作系统和 CPU 架构匹配的压缩包：
 
@@ -129,7 +163,7 @@ Windows PowerShell 可以把输出与 `SHA256SUMS` 中对应文件的值比较�
 Get-FileHash .\agentctl-v1.2.3-windows-amd64.zip -Algorithm SHA256
 ```
 
-### 从源码安装
+### Go 开发者从源码安装（可选）
 
 克隆项目后，在仓库根目录执行：
 
@@ -343,7 +377,7 @@ Agent 应优先判断退出码，再解析 stdout 或 stderr 的 JSON，不要�
 
 ## 基于模板开发自己的 CLI
 
-1. 全局替换模块路径 `github.com/example/agent-cli-starter`。
+1. 全局替换模块路径 `github.com/pyronn/agent-cli-starter`（使用初始化工具时会自动完成）。
 2. 修改 `appName`、配置目录名和 `AGENTCTL_` 环境变量前缀。
 3. 在 `internal/config` 中添加允许的配置项和校验规则。
 4. 用你的领域命令替换 `example echo`，把业务逻辑放在 `internal/service`。

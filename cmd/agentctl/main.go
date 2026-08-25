@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/example/agent-cli-starter/internal/buildinfo"
-	"github.com/example/agent-cli-starter/internal/cli"
+	"github.com/pyronn/agent-cli-starter/internal/buildinfo"
+	"github.com/pyronn/agent-cli-starter/internal/cli"
 )
 
 var (

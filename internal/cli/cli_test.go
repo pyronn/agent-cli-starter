@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/example/agent-cli-starter/internal/buildinfo"
+	"github.com/pyronn/agent-cli-starter/internal/buildinfo"
 )
 
 func TestConfigLifecycle(t *testing.T) {

@@ -8,10 +8,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/example/agent-cli-starter/internal/buildinfo"
-	"github.com/example/agent-cli-starter/internal/config"
-	"github.com/example/agent-cli-starter/internal/output"
-	"github.com/example/agent-cli-starter/internal/service"
+	"github.com/pyronn/agent-cli-starter/internal/buildinfo"
+	"github.com/pyronn/agent-cli-starter/internal/config"
+	"github.com/pyronn/agent-cli-starter/internal/output"
+	"github.com/pyronn/agent-cli-starter/internal/service"
 	"github.com/spf13/cobra"
 )
 

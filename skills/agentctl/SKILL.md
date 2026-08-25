@@ -12,7 +12,7 @@ Operate `agentctl` through its installed binary. Treat the current binary's help
 
 ## Workflow
 
-1. Confirm availability with `agentctl version --json`. If the executable is missing, stop and explain how to install it; do not silently build or download software.
+1. Confirm availability with `agentctl version --json`. If the executable is missing, stop and read [references/installation.md](references/installation.md); do not silently build or download software.
 2. Before using an unfamiliar command or flag, run `agentctl --help` and then the relevant subcommand's `--help`. Never invent commands from the user's wording.
 3. Prefer `--json` for automation. Judge success by exit code before parsing stdout or stderr.
 4. Use `agentctl doctor --json` for setup failures and `agentctl config list --effective --json` when configuration precedence matters.
@@ -20,6 +20,7 @@ Operate `agentctl` through its installed binary. Treat the current binary's help
    - Command selection and mutation behavior: [references/commands.md](references/commands.md)
    - JSON envelopes, streams, and exit codes: [references/output-contract.md](references/output-contract.md)
    - Configuration precedence, persistence, and secrets: [references/configuration.md](references/configuration.md)
+   - Native executable installation without Go or npm: [references/installation.md](references/installation.md)
 
 ## Constraints
 

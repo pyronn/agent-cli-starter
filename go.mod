@@ -1,4 +1,4 @@
-module github.com/example/agent-cli-starter
+module github.com/pyronn/agent-cli-starter
 
 go 1.26.0
 

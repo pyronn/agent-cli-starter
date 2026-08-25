@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/example/agent-cli-starter/internal/output"
+	"github.com/pyronn/agent-cli-starter/internal/output"
 	"github.com/spf13/cobra"
 )
 

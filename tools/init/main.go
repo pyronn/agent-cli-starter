@@ -378,6 +378,7 @@ func validateRenameTarget(source, target, label string) error {
 func replaceIdentity(data []byte, current projectState, options settings) []byte {
 	replacements := [][2]string{
 		{current.module, options.module},
+		{githubRepository(current.module), githubRepository(options.module)},
 		{current.envPrefix, options.envPrefix},
 		{current.name, options.name},
 	}
@@ -385,6 +386,7 @@ func replaceIdentity(data []byte, current projectState, options settings) []byte
 		{0, 1, 0},
 		{0, 2, 0},
 		{0, 3, 0},
+		{0, 4, 0},
 	}
 	result := append([]byte(nil), data...)
 	for index, replacement := range replacements {
@@ -396,6 +398,10 @@ func replaceIdentity(data []byte, current projectState, options settings) []byte
 		result = bytes.ReplaceAll(result, tokens[index], []byte(replacement[1]))
 	}
 	return result
+}
+
+func githubRepository(module string) string {
+	return strings.TrimPrefix(module, "github.com/")
 }
 
 func updateDescription(data []byte, description string) []byte {

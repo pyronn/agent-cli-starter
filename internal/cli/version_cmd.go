@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/example/agent-cli-starter/internal/buildinfo"
-	"github.com/example/agent-cli-starter/internal/output"
+	"github.com/pyronn/agent-cli-starter/internal/buildinfo"
+	"github.com/pyronn/agent-cli-starter/internal/output"
 	"github.com/spf13/cobra"
 )
 

@@ -33,6 +33,22 @@ jobs:
         run: go test ./...
       - name: Vet
         run: go vet ./...
+      - name: Validate shell installer
+        run: bash -n scripts/install.sh
+      - name: Validate PowerShell installer
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path scripts/install.ps1),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List
+            exit 1
+          }
 
   build:
     name: build (${{ matrix.goos }}/${{ matrix.goarch }})
@@ -113,6 +129,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - name: Download packaged binaries
         uses: actions/download-artifact@v4
         with:
@@ -125,6 +142,11 @@ jobs:
           cd release-assets
           sha256sum agentctl-* > SHA256SUMS
           cat SHA256SUMS
+      - name: Include native install scripts
+        shell: bash
+        run: |
+          cp scripts/install.sh release-assets/install.sh
+          cp scripts/install.ps1 release-assets/install.ps1
       - name: Create GitHub Release
         shell: bash
         env:
