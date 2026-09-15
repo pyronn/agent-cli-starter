@@ -36,6 +36,7 @@ Windows 也可以运行构建脚本：
 
 - CLI 命令名和 `cmd/<name>` 目录
 - Go module 路径及所有内部 import
+- `update` 命令使用的 Release 仓库地址
 - 环境变量前缀
 - 跨平台配置目录名
 - README 标题和项目描述
@@ -140,6 +141,40 @@ irm https://raw.githubusercontent.com/pyronn/agent-cli-starter/main/scripts/inst
 ```
 
 直接执行网络脚本前可以先下载并检查其内容；在受控或企业环境中推荐这样做。
+
+### 更新已安装的 CLI
+
+已经安装的 CLI 可以自己升级，不依赖安装脚本：
+
+```shell
+agentctl update --check
+agentctl update
+agentctl update --version v1.2.3
+```
+
+- `update --check` 只查询最新 Release，报告当前版本和最新版本。
+- `update` 在存在新版本时下载并安装它，已经是最新版本时不做任何修改。
+- `update --version vX.Y.Z` 安装指定版本，可用于降级或修复损坏的安装。
+
+更新流程会识别操作系统和 CPU 架构，下载对应的 Release 压缩包，校验 `SHA256SUMS`，然后原地替换当前可执行文件。Windows 上正在运行的旧文件无法立即删除，会被重命名为 `agentctl.exe.old`，并在下一次执行时自动清理。如果可执行文件所在目录不可写，命令会以退出码 `1` 失败并返回原始错误。
+
+### 自动版本检查
+
+除 `update` 自身外，CLI 每次成功执行命令后都会检查一次最新 Release。发现新版本时，会向 stderr 打印一行提示：
+
+```text
+A new version of agentctl is available: v1.2.3 (current v1.2.0).
+Run "agentctl update" to install it.
+```
+
+该检查有以下约束，不会影响自动化调用：
+
+- 结果缓存 24 小时，写入 `os.UserConfigDir()` 下的 `agentctl/update-check.json`，失败也会缓存，避免离线时反复重试。
+- 单次网络请求最多等待 3 秒，任何失败都只被忽略，从不改变命令的退出码。
+- `--json` / `--output json` 模式下完全不输出提示，也不输出下载进度，保证 stdout 与 stderr 始终是合法 JSON。
+- 设置环境变量 `AGENTCTL_NO_UPDATE_CHECK=1`（也接受 `true`、`yes`、`on`）或传入全局参数 `--no-update-check` 可以关闭检查。
+
+Agent 应当通过 `agentctl update --check --json` 显式查询版本，而不是依赖这行提示。
 
 ### 手动下载 GitHub Release
 
@@ -371,6 +406,7 @@ Agent 应优先判断退出码，再解析 stdout 或 stderr 的 JSON，不要�
 ├── internal/config/       # 配置文件、校验、优先级和来源追踪
 ├── internal/output/       # 稳定的 JSON envelope
 ├── internal/service/      # 与 CLI 框架解耦的业务逻辑
+├── internal/update/       # Release 检查、校验和与自更新
 ├── scripts/build.ps1      # Windows 本地构建
 └── .github/workflows/     # 三平台 CI
 ```

@@ -12,6 +12,7 @@ import (
 	"github.com/pyronn/agent-cli-starter/internal/config"
 	"github.com/pyronn/agent-cli-starter/internal/output"
 	"github.com/pyronn/agent-cli-starter/internal/service"
+	"github.com/pyronn/agent-cli-starter/internal/update"
 	"github.com/spf13/cobra"
 )
 
@@ -25,22 +26,26 @@ type Options struct {
 	Build     buildinfo.Info
 	LookupEnv func(string) (string, bool)
 	Echo      service.Echoer
+	Updater   Updater
 }
 
 type state struct {
-	configPath string
-	file       config.File
-	values     config.Values
-	entries    []config.Entry
-	output     string
+	configPath      string
+	file            config.File
+	values          config.Values
+	entries         []config.Entry
+	output          string
+	skipUpdateCheck bool
+	ran             bool
 }
 
 type flags struct {
-	configPath string
-	endpoint   string
-	timeout    string
-	output     string
-	json       bool
+	configPath    string
+	endpoint      string
+	timeout       string
+	output        string
+	json          bool
+	noUpdateCheck bool
 }
 
 func Execute(ctx context.Context, args []string, stdout, stderr io.Writer, options Options) int {
@@ -50,6 +55,12 @@ func Execute(ctx context.Context, args []string, stdout, stderr io.Writer, optio
 	if options.Echo == nil {
 		options.Echo = service.EchoService{}
 	}
+	if options.Updater == nil {
+		options.Updater = update.New(update.Config{
+			Name:    appName,
+			Current: options.Build.Version,
+		})
+	}
 	command, current := newRootCommand(options)
 	command.SetArgs(args)
 	command.SetOut(stdout)
@@ -57,6 +68,7 @@ func Execute(ctx context.Context, args []string, stdout, stderr io.Writer, optio
 
 	err := command.ExecuteContext(ctx)
 	if err == nil {
+		notifyAvailableUpdate(ctx, options, current, stderr)
 		return 0
 	}
 
@@ -95,6 +107,8 @@ func newRootCommand(options Options) (*cobra.Command, *state) {
 			return cmd.Help()
 		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			current.ran = true
+			current.skipUpdateCheck = rootFlags.noUpdateCheck || cmd.Annotations[skipUpdateCheck] == "true"
 			if cmd.Annotations[skipConfig] == "true" {
 				mode, err := outputFromFlags(rootFlags)
 				if err != nil {
@@ -155,11 +169,13 @@ func newRootCommand(options Options) (*cobra.Command, *state) {
 	root.PersistentFlags().StringVar(&rootFlags.timeout, "timeout", "", "request timeout, for example 30s or 2m")
 	root.PersistentFlags().StringVarP(&rootFlags.output, "output", "o", "", "output format: text or json")
 	root.PersistentFlags().BoolVar(&rootFlags.json, "json", false, "shorthand for --output=json")
+	root.PersistentFlags().BoolVar(&rootFlags.noUpdateCheck, "no-update-check", false, "skip the automatic update check")
 
 	root.AddCommand(
 		newConfigCommand(current),
 		newDoctorCommand(current, options),
 		newExampleCommand(current, options),
+		newUpdateCommand(current, options),
 		newVersionCommand(current, options.Build),
 	)
 	return root, current

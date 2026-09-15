@@ -7,6 +7,7 @@ Read this file when selecting or executing an `agentctl` command. Confirm flags 
 | Intent | Command |
 |---|---|
 | Show build metadata | `agentctl version --json` |
+| Check for a newer release without installing it | `agentctl update --check --json` |
 | Diagnose platform, configuration, endpoint, and credential presence | `agentctl doctor --json` |
 | Show the active configuration path | `agentctl config path --json` |
 | Show persisted values only | `agentctl config list --json` |
@@ -15,6 +16,22 @@ Read this file when selecting or executing an `agentctl` command. Confirm flags 
 | Read the effective value | `agentctl config get KEY --effective --json` |
 
 Supported configuration keys in this starter are `endpoint`, `timeout`, and `output`.
+
+## Updates
+
+`agentctl update` downloads the release archive for the current operating system and CPU architecture, verifies it against `SHA256SUMS`, and replaces the installed executable in place.
+
+```text
+agentctl update --check --json
+agentctl update --json
+agentctl update --version v1.2.3 --json
+```
+
+- Prefer `update --check --json` to report availability; it changes nothing.
+- `update` without flags installs the latest release and reports `updated: false` when the installed version is already current.
+- `update --version` installs an exact tag and is the only way to request a downgrade or a repair.
+- Installing modifies the user's machine, so run it only when the user asked for an update.
+- The text mode notice printed after other commands is informational; do not treat it as an error and do not rely on it in automation.
 
 ## Persistent mutations
 

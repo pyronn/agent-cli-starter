@@ -20,4 +20,18 @@ The installers detect OS and CPU architecture, download the corresponding Releas
 
 Do not execute either installer without user authorization. If the user prefers to inspect downloaded code before execution, direct them to download the script first and run it locally.
 
+## Updating an installation
+
+An installed executable updates itself without the install scripts:
+
+```text
+agentctl update --check --json
+agentctl update --json
+agentctl update --version v1.2.3 --json
+```
+
+`update` resolves the latest released tag, downloads the archive for the current platform, verifies `SHA256SUMS`, and replaces the running executable. It needs write access to the directory that holds the executable; when that is missing it exits with code `1` and the underlying error, and the user should fall back to reinstalling with the native installer.
+
+Replacements are explicit user actions. Report `update --check` first unless the user already asked to upgrade, and never perform a downgrade without confirmation.
+
 Developers with Go may still use `go install`, but it is not required for normal users.

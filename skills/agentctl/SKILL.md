@@ -20,11 +20,12 @@ Operate `agentctl` through its installed binary. Treat the current binary's help
    - Command selection and mutation behavior: [references/commands.md](references/commands.md)
    - JSON envelopes, streams, and exit codes: [references/output-contract.md](references/output-contract.md)
    - Configuration precedence, persistence, and secrets: [references/configuration.md](references/configuration.md)
-   - Native executable installation without Go or npm: [references/installation.md](references/installation.md)
+   - Installing or self-updating the executable: [references/installation.md](references/installation.md)
 
 ## Constraints
 
 - `config set` and `config unset` persist user configuration. Execute them only when the user asked to change configuration, and report the changed key without exposing secrets.
+- `update` replaces the installed executable and contacts the release host. Use `update --check --json` to report availability, and install only when the user asked to update or upgrade.
 - Never print `AGENTCTL_TOKEN` or include its value in commands, logs, or replies. This starter reads it only for credential presence checks.
 - Pass `--config` only when the user specifies an alternate file or the task clearly targets an isolated configuration. Otherwise use the platform-native default.
 - `example echo` is demonstration scaffolding, not a general-purpose domain capability.
