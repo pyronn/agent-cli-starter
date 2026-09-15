@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$Version = $(if ($env:AGENTCTL_VERSION) { $env:AGENTCTL_VERSION } else { "latest" }),
-    [string]$InstallDir = $(if ($env:AGENTCTL_INSTALL_DIR) { $env:AGENTCTL_INSTALL_DIR } else { Join-Path $HOME "bin" }),
+    [string]$InstallDir = $(if ($env:AGENTCTL_INSTALL_DIR) { $env:AGENTCTL_INSTALL_DIR } else { Join-Path $HOME ".local\bin" }),
     [switch]$NoModifyPath
 )
 
@@ -10,10 +10,36 @@ $CliName = "agentctl"
 $RepositoryUrl = "https://github.com/pyronn/agent-cli-starter"
 $Repository = $RepositoryUrl -replace '^https://github\.com/', ''
 
-$Architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+function Get-AgentctlArchitecture {
+    $DetectedArchitecture = $null
+
+    try {
+        $DetectedArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+    } catch {
+        # RuntimeInformation is unavailable on some older Windows PowerShell/.NET installations.
+    }
+
+    if (-not $DetectedArchitecture) {
+        $DetectedArchitecture = if ($env:PROCESSOR_ARCHITEW6432) {
+            $env:PROCESSOR_ARCHITEW6432
+        } else {
+            $env:PROCESSOR_ARCHITECTURE
+        }
+    }
+
+    if (-not $DetectedArchitecture) {
+        throw "Unable to detect CPU architecture. Set PROCESSOR_ARCHITECTURE to AMD64 or ARM64 and retry."
+    }
+
+    return ([string]$DetectedArchitecture).ToUpperInvariant()
+}
+
+$Architecture = Get-AgentctlArchitecture
 switch ($Architecture) {
     "X64" { $Arch = "amd64" }
+    "AMD64" { $Arch = "amd64" }
     "Arm64" { $Arch = "arm64" }
+    "ARM64" { $Arch = "arm64" }
     default { throw "Unsupported CPU architecture: $Architecture" }
 }
 
@@ -42,8 +68,13 @@ try {
     if (-not $ChecksumLine) {
         throw "Checksum for $Archive is missing"
     }
-    $Expected = ($ChecksumLine -split '\s+')[0].ToUpperInvariant()
-    $Actual = (Get-FileHash (Join-Path $TempDir $Archive) -Algorithm SHA256).Hash.ToUpperInvariant()
+    $Expected = [string](($ChecksumLine -split '\s+')[0])
+    $Actual = [string](Get-FileHash (Join-Path $TempDir $Archive) -Algorithm SHA256).Hash
+    if (-not $Expected -or -not $Actual) {
+        throw "Unable to calculate the SHA256 checksum for $Archive"
+    }
+    $Expected = $Expected.ToUpperInvariant()
+    $Actual = $Actual.ToUpperInvariant()
     if ($Actual -ne $Expected) {
         throw "SHA256 checksum mismatch for $Archive"
     }

@@ -127,7 +127,7 @@ irm https://raw.githubusercontent.com/pyronn/agent-cli-starter/main/scripts/inst
 安装脚本会自动识别操作系统和 CPU 架构，从 GitHub Release 下载对应压缩包，校验 `SHA256SUMS`，然后安装到用户目录：
 
 - Linux/macOS：默认 `~/.local/bin/agentctl`
-- Windows：默认 `%USERPROFILE%\bin\agentctl.exe`，并加入用户 `PATH`
+- Windows：默认 `%USERPROFILE%\.local\bin\agentctl.exe`，并加入用户 `PATH`
 
 安装指定版本：
 
