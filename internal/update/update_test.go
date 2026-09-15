@@ -214,24 +214,46 @@ func TestInstallReplacesExecutable(t *testing.T) {
 	}))
 	defer server.Close()
 
-	target := filepath.Join(t.TempDir(), binary)
+	targetDir := t.TempDir()
+	target := filepath.Join(targetDir, binary)
 	if err := os.WriteFile(target, []byte("old binary"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	// Report the executable through a path containing a harmless .. segment.
+	// Installation resolves and cleans the path, the way macOS /var and
+	// Windows short temp paths are normalized.
+	nested := filepath.Join(targetDir, "nested")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	reported := nested + string(filepath.Separator) + ".." + string(filepath.Separator) + binary
 
 	service := newTestService(t, server, Config{
 		Current:    "v1.2.0",
-		Executable: func() (string, error) { return target, nil },
+		Executable: func() (string, error) { return reported, nil },
 	})
 	result, err := service.Install(context.Background(), targetVersion, io.Discard)
 	if err != nil {
 		t.Fatalf("Install: %v", err)
 	}
-	if !result.Updated || result.Version != targetVersion || result.Path != target {
+	if !result.Updated || result.Version != targetVersion {
 		t.Fatalf("result = %+v", result)
 	}
 	if result.Previous != "v1.2.0" {
 		t.Fatalf("previous = %q", result.Previous)
+	}
+	// Installation resolves symlinks, so compare file identity instead of the
+	// raw path: macOS rewrites /var and Windows can return short temp paths.
+	installedInfo, err := os.Stat(result.Path)
+	if err != nil {
+		t.Fatalf("stat installed path: %v", err)
+	}
+	targetInfo, err := os.Stat(target)
+	if err != nil {
+		t.Fatalf("stat target: %v", err)
+	}
+	if !os.SameFile(installedInfo, targetInfo) {
+		t.Fatalf("result.Path = %q, want the same file as %q", result.Path, target)
 	}
 	installed, err := os.ReadFile(target)
 	if err != nil {
